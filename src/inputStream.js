@@ -1,39 +1,34 @@
 function InputStream(input) {
-	var pos 	= 0,
-		line 	= 1,
-		col 	= 0;
+	this.pos 	= 0;
+	this.line 	= 1;
+	this.col 	= 0;
+	this.input = input;
+}
 
-	function next() {
-		var ch = input.charAt(pos++);
-		if (ch == "\n") {
-			/* newline */
-			line++
-			col = 0
-		} else {
-			col++
-		}
 
-		return ch;
+InputStream.prototype.next = function() {
+	var ch = this.input.charAt(this.pos++);
+	if (ch == "\n") {
+		/* newline */
+		this.line++
+		this.col = 0
+	} else {
+		this.col++
 	}
 
-	function peek() {
-		return input.charAt(pos);
-	}
+	return ch;
+}
 
-	function eof() {
-		return peek() == "";
-	}
+InputStream.prototype.peek = function() {
+	return this.input.charAt(this.pos);
+}
 
-	function croak(msg) {
-		throw new Error(msg + " (" + line + ":" + col + ")")
-	}
+InputStream.prototype.eof = function() {
+	return this.peek() == "";
+}
 
-	return {
-		next : next,
-		peek : peek,
-		eof : eof,
-		croak : croak
-	}
+InputStream.prototype.croak = function(msg) {
+	throw new Error(msg + " (" + this.line + ":" + this.col + ")")
 }
 
 module.exports = InputStream;
