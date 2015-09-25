@@ -112,6 +112,11 @@ function read_number() {
 		}
 		return is_digit(ch);
 	});
+	if (has_dot) {
+		return { type: "float64", value: parseFloat(number) };
+	} else {
+		return { type: "int", value: parseInt(number)}
+	}
 }
 
 
