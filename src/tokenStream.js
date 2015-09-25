@@ -1,44 +1,84 @@
+// Globalize these then close over to make them private
+/* tokenStream started off as a huge object, but..
+1. "this."" was everywhere, it didn't feel right
+2. Half of these functions and properties will never get accessed outside of the constructor, so no point making them public
+*/
+
+current = null;
+keywords = "";
+input = null;
+
 /*input should be an inputStream object */
-function TokenStream(input) {
-	this.current = null;
-	this.keywords = "if then else function true false".split(" ");
-	this.input = input;
-	console.log(this.readNext());
+function TokenStream(sInput) {
+	current = null;
+	/* keywords taken from: https://golang.org/ref/spec */
+	keywords = "case break chan const continue default defer else fallthrough for func go goto if import iterface map package range return select struct switch type var".split(" ");
+	input = this.input = sInput;
 }
 
-var proto = TokenStream.prototype;
+function is_keyword(x) {
+	return keywords.indexOf(x) >= 0;
+};
+
+function is_digit(ch) {
+    return /[0-9]/i.test(ch);
+};
+
+function is_id_start(ch) {
+    return /[a-z]/i.test(ch);
+};
+
+function isOpChar(ch) {
+    return "+-*/%=&|<>!".indexOf(ch) >= 0;
+}
+
+function is_id(ch) {
+    return is_id_start(ch) || "?!-<>=0123456789".indexOf(ch) >= 0;
+}
+
+function read_ident() {
+	var id = readWhile(is_id);
+	return {
+		type : is_keyword(id) ? "kw" : "var",
+		value : id
+	};
+}
 
 // If the callback returns true keep going
 // Then return string, this is a pivitol function of our tokenizer, this will chop up the main string into substrings
-proto.readWhile = function(predicate) {
+function readWhile(predicate) {
 	var str = "";
-	while (!this.input.eof() && predicate(this.input.peek())) {
-		str += this.input.next();
+	while (!input.eof() && predicate(input.peek())) {
+		str += input.next();
 	}
 	return str;
 }
 
-proto.isKeyword = function(x) {
-	return this.keywords.indexOf(x) >= 0
+function isKeyword(x) {
+	return keywords.indexOf(x) >= 0
 }
 
-proto.isWhitespace = function(ch) {
+function isWhitespace(ch) {
 	return " \t\n".indexOf(ch) >= 0;
 }
 
-proto.skipComment = function() {
-    this.readWhile(function(ch){ return ch != "\n" });
-    this.input.next();
+function isPunc(ch) {
+    return ".,;(){}[]".indexOf(ch) >= 0;
 }
 
-proto.readEscaped = function(end) {
+function skipComment() {
+    readWhile(function(ch){ return ch != "\n" });
+    input.next();
+}
+
+function readEscaped(end) {
 	var escaped = false,
 		str 	= "";
 
 	// We're currently sitting before the " so move forward one
-	this.input.next()
+	input.next()
 	while (!input.eof()) {
-		var ch = this.input.next();
+		var ch = input.next();
 		if (escaped) {
 			str += ch;
 			escaped = false;
@@ -54,25 +94,70 @@ proto.readEscaped = function(end) {
 
 }
 
-proto.readString = function() {
-	var that = this;
-	return { type: "str", value: that.readEscaped('"') };
-}	
+function readString() {
+	return { type: "str", value: readEscaped('"') };
+}
+
+function readRune() {
+	return { type: "rune", value: readEscaped("'") };
+}
+
+function read_number() {
+	var has_dot = false;
+	var number = readWhile(function(ch) {
+		if (ch == ".") {
+			if (has_dot) return false;
+			has_dot = true; // There's a . in this number string, but it's the first one we've come across, so lets keep going
+			return true;
+		}
+		return is_digit(ch);
+	});
+}
 
 
 
-proto.readNext = function() {
+
+
+function readNext() {
 	/* Skip past any whitespace, tabs or newlines*/
-	this.readWhile(this.isWhitespace);
-	if (this.input.eof()) return null;
-	var ch = this.input.peek();
-	if (ch == "/" && this.input.input.charAt(this.input.pos + 1) == "/") {
-		this.skipComment()
-		return this.readNext()
+	readWhile(isWhitespace);
+	if (input.eof()) return null;
+	var ch = input.peek();
+	/* if we get a / check the next character is also a /, if so we are in a comment */
+	if (ch == "/" && input.input.charAt(input.pos + 1) == "/") {
+		skipComment()
+		return readNext()
 	}
-	if (ch == '"') return this.readString();
+	if (ch == '"') return readString();
+	if (ch == "'") return readRune();
 
-	return this.input.peek();
+	if (is_digit(ch)) return read_number();
+	if (is_id_start(ch)) return read_ident();
+    if (isPunc(ch)) return {
+    	type  : "punc",
+    	value : input.next()
+	};
+	if (isOpChar(ch)) return {
+		type : "op",
+		value : read_while(isOpChar)
+	};
+	input.croak("can't handle character: " + ch);
+
+	return input.peek();
+}
+
+TokenStream.prototype.peak = function() {
+    return current || (current = readNext());
+}
+
+TokenStream.prototype.next = function() {
+	var tok = current;
+    current = null;
+    return tok || readNext();
+}
+
+TokenStream.prototype.eof = function() {
+    	return peek() == null;
 }
 
 module.exports = TokenStream;
