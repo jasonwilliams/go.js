@@ -18,15 +18,15 @@ function TokenStream(sInput) {
 
 function is_keyword(x) {
 	return keywords.indexOf(x) >= 0;
-};
+}
 
 function is_digit(ch) {
     return /[0-9]/i.test(ch);
-};
+}
 
 function is_id_start(ch) {
     return /[a-z]/i.test(ch);
-};
+}
 
 function isOpChar(ch) {
     return "+-*/%=&|<>!".indexOf(ch) >= 0;
@@ -55,7 +55,7 @@ function readWhile(predicate) {
 }
 
 function isKeyword(x) {
-	return keywords.indexOf(x) >= 0
+	return keywords.indexOf(x) >= 0;
 }
 
 function isWhitespace(ch) {
@@ -67,7 +67,7 @@ function isPunc(ch) {
 }
 
 function skipComment() {
-    readWhile(function(ch){ return ch != "\n" });
+    readWhile(function(ch){ return ch != "\n"; });
     input.next();
 }
 
@@ -95,7 +95,7 @@ function readEscaped(end) {
 }
 
 function readString() {
-	return { type: "str", value: readEscaped('"') };
+	return { type: "string", value: readEscaped('"') };
 }
 
 function readRune() {
@@ -151,7 +151,7 @@ function readNext() {
 	return input.peek();
 }
 
-TokenStream.prototype.peak = function() {
+TokenStream.prototype.peek = function() {
     return current || (current = readNext());
 }
 
@@ -162,7 +162,11 @@ TokenStream.prototype.next = function() {
 }
 
 TokenStream.prototype.eof = function() {
-    	return peek() == null;
+    	return this.peek() == null;
 }
+
+TokenStream.prototype.croak = function(msg) {
+	throw new Error(msg + " (" + this.input.line + ":" + this.input.col + ")");
+};
 
 module.exports = TokenStream;
