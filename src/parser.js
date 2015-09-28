@@ -2,6 +2,7 @@ var FALSE = { type: "bool", value: false };
 function parse(input) {
     var PRECEDENCE = {
         "=": 1,
+        ":=": 1,
         "||": 2,
         "&&": 3,
         "<": 7, ">": 7, "<=": 7, ">=": 7, "==": 7, "!=": 7,
@@ -133,6 +134,35 @@ function parse(input) {
     	}
     }
 
+    function parse_struct() {
+        input.next()
+        skip_punc("{");
+        var obj = {}
+        while (!input.eof()) {
+            if (is_punc("}")) break;
+            obj[input.next().value] = input.next().value;
+            if (is_punc("}")) break;
+        }
+        input.next()
+        return obj;
+    }
+
+    function parse_type() {
+        var type;
+        input.next();
+        var type_name = input.next().value;
+        if (input.peek().value === "struct") {
+            var struct = parse_struct();
+            type = 'struct'
+
+        }
+        return {
+            type : type,
+            name : type_name,
+            value : struct
+        }
+    }
+
     function maybe_call(expr) {
         expr = expr();
         return is_punc("(") ? parse_call(expr) : expr;
@@ -149,6 +179,7 @@ function parse(input) {
             if (is_kw("if")) return parse_if();
             if (is_kw("true") || is_kw("false")) return parse_bool();
             if (is_kw("package")) return parse_package();
+            if (is_kw("type")) return parse_type();
             if (is_kw("import")) return parse_import();
             if (is_kw("func")) {
                 input.next();
@@ -164,12 +195,24 @@ function parse(input) {
     function parse_toplevel() {
         var prog = [];
         while (!input.eof()) {
+            if (input.peek().type === "string") {
+                input.croak('non-declaration statement outside function body');
+            }
             prog.push(parse_expression());
         }
         return { type: "prog", prog: prog };
     }
     function parse_prog() {
-        var prog = delimited("{", "}", "\\n", parse_expression);
+        var prog = [];
+        // sitting on { so move across
+        input.next();
+        while (!input.eof()) {
+            if (is_punc("}")) break; // Capture empty expressions {}
+            prog.push(parse_expression())
+            if (is_punc("}")) break;
+        }
+        skip_punc("}");
+
         if (prog.length == 0) return FALSE;
         if (prog.length == 1) return prog[0];
         return { type: "prog", prog: prog };

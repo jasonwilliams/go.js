@@ -29,7 +29,7 @@ function is_id_start(ch) {
 }
 
 function isOpChar(ch) {
-    return "+-*/%=&|<>!".indexOf(ch) >= 0;
+    return "+-*/%=&|<>!:".indexOf(ch) >= 0;
 }
 
 function is_id(ch) {
@@ -59,7 +59,7 @@ function isKeyword(x) {
 }
 
 function isWhitespace(ch) {
-	return " \t\n".indexOf(ch) >= 0;
+	return " \r\t\n".indexOf(ch) >= 0;
 }
 
 function isPunc(ch) {
@@ -144,7 +144,7 @@ function readNext() {
 	};
 	if (isOpChar(ch)) return {
 		type : "op",
-		value : read_while(isOpChar)
+		value : readWhile(isOpChar)
 	};
 	input.croak("can't handle character: " + ch);
 
