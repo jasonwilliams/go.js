@@ -9,5 +9,6 @@ type myObj struct {
 }
 
 func main() {
-	jason := "Jason"
+	var jase string = "hello"
+	// fmt.Println(jase)
 }

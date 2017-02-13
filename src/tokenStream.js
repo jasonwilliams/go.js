@@ -119,10 +119,6 @@ function read_number() {
 	}
 }
 
-
-
-
-
 function readNext() {
 	/* Skip past any whitespace, tabs or newlines*/
 	readWhile(isWhitespace);

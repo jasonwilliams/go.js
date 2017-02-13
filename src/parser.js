@@ -181,6 +181,10 @@ function parse(input) {
             if (is_kw("package")) return parse_package();
             if (is_kw("type")) return parse_type();
             if (is_kw("import")) return parse_import();
+            if (is_kw("var")) {
+                input.next();
+                return parse_varname();
+            }
             if (is_kw("func")) {
                 input.next();
                 return parse_func();

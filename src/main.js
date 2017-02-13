@@ -16,6 +16,9 @@ fs.readFile('test.go', 'utf8', function(err, data) {
 	// 	console.log(ts.next());
 	// }
 	
-	console.dir(parse(ts));
+	var foo = parse(ts);
+	console.dir(foo);
+	console.log('---');
+	console.dir(foo.prog[3].body.prog)
 
 });
